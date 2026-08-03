@@ -1,4 +1,4 @@
-const CACHE_NAME = 'family-running-v1';
+const CACHE_NAME = 'family-running-v2';
 const ASSETS = [
   './index.html',
   './family_running_tracker.html',
@@ -24,6 +24,17 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  const isHTML = event.request.mode === 'navigate' || event.request.destination === 'document';
+  if(isHTML){
+    event.respondWith(
+      fetch(event.request).then((response) => {
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        return response;
+      }).catch(() => caches.match(event.request))
+    );
+    return;
+  }
   event.respondWith(
     caches.match(event.request).then((cached) => {
       return cached || fetch(event.request).then((response) => {
