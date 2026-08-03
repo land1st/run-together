@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>가족 러닝 프로젝트</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#007AFF">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="가족러닝">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+<style>
+  :root{
+    --bg:#F2F2F7;
+    --card:#FFFFFF;
+    --text:#1C1C1E;
+    --text2:#8E8E93;
+    --line:#E5E5EA;
+    --dad:#007AFF;
+    --dad-bg:#E8F1FF;
+    --mom:#FF2D55;
+    --mom-bg:#FFEAEF;
+    --son:#34C759;
+    --son-bg:#E9F9EC;
+    --radius:18px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    display:flex;
+    justify-content:center;
+    padding-bottom:40px;
+  }
+  #app{
+    width:100%;
+    max-width:430px;
+    min-height:100vh;
+    background:var(--bg);
+    padding:0 16px;
+  }
+  .status-space{height:20px;}
+  header{
+    padding:8px 4px 18px;
+  }
+  header h1{
+    font-size:28px;
+    font-weight:700;
+    margin:0 0 2px;
+    letter-spacing:-0.5px;
+  }
+  header p{
+    font-size:14px;
+    color:var(--text2);
+    margin:0;
+    font-weight:500;
+  }
+
+  .hero{
+    background:linear-gradient(135deg,#0A84FF,#5AC8FA);
+    border-radius:24px;
+    padding:22px 22px 20px;
+    color:#fff;
+    margin-bottom:16px;
+    position:relative;
+    overflow:hidden;
+  }
+  .hero .label{
+    font-size:13px;
+    font-weight:600;
+    opacity:0.85;
+    margin-bottom:6px;
+  }
+  .hero .big{
+    font-size:40px;
+    font-weight:800;
+    letter-spacing:-1px;
+    display:flex;
+    align-items:baseline;
+    gap:6px;
+  }
+  .hero .big span{
+    font-size:16px;
+    font-weight:600;
+    opacity:0.85;
+  }
+  .hero .row{
+    display:flex;
+    gap:18px;
+    margin-top:16px;
+  }
+  .hero .row div{
+    font-size:12px;
+    opacity:0.85;
+    font-weight:500;
+  }
+  .hero .row strong{
+    display:block;
+    font-size:17px;
+    font-weight:700;
+    margin-top:2px;
+  }
+
+  .segment{
+    display:flex;
+    background:#E4E4E9;
+    border-radius:12px;
+    padding:3px;
+    margin-bottom:16px;
+    gap:2px;
+  }
+  .segment button{
+    flex:1;
+    border:none;
+    background:transparent;
+    padding:9px 0;
+    font-family:inherit;
+    font-size:14px;
+    font-weight:600;
+    color:var(--text2);
+    border-radius:9px;
+    cursor:pointer;
+  }
+  .segment button.active{
+    background:#fff;
+    color:var(--text);
+    box-shadow:0 1px 3px rgba(0,0,0,0.12);
+  }
+
+  .stat-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:10px;
+    margin-bottom:20px;
+  }
+  .stat-card{
+    background:var(--card);
+    border-radius:16px;
+    padding:14px 10px;
+    text-align:center;
+  }
+  .stat-card .n{
+    font-size:19px;
+    font-weight:700;
+    letter-spacing:-0.3px;
+  }
+  .stat-card .l{
+    font-size:11px;
+    color:var(--text2);
+    font-weight:500;
+    margin-top:4px;
+  }
+
+  .section-title{
+    font-size:20px;
+    font-weight:700;
+    margin:4px 0 12px;
+    letter-spacing:-0.3px;
+  }
+
+  .record{
+    background:var(--card);
+    border-radius:16px;
+    padding:14px 16px;
+    margin-bottom:10px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  .record .photo-thumb{
+    width:48px;
+    height:48px;
+    border-radius:12px;
+    object-fit:cover;
+    flex-shrink:0;
+  }
+  .record .badge{
+    width:40px;
+    height:40px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:15px;
+    font-weight:700;
+    flex-shrink:0;
+  }
+  .badge.dad{background:var(--dad-bg); color:var(--dad);}
+  .badge.mom{background:var(--mom-bg); color:var(--mom);}
+  .badge.son{background:var(--son-bg); color:var(--son);}
+
+  .record .info{flex:1; min-width:0;}
+  .record .info .top{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+  }
+  .record .info .dist{
+    font-size:17px;
+    font-weight:700;
+  }
+  .record .info .date{
+    font-size:12px;
+    color:var(--text2);
+    font-weight:500;
+  }
+  .record .info .bottom{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-top:3px;
+    font-size:13px;
+    color:var(--text2);
+    font-weight:500;
+    flex-wrap:wrap;
+  }
+  .zone-tag{
+    font-size:11px;
+    font-weight:700;
+    padding:2px 7px;
+    border-radius:7px;
+  }
+  .zone-good{background:var(--son-bg); color:#1F8A3B;}
+  .zone-fast{background:#FFEAEA; color:#D9291C;}
+  .conv-tag{
+    font-size:13px;
+  }
+  .weight-card{
+    background:var(--card);
+    border-radius:16px;
+    padding:14px 16px;
+    margin-bottom:16px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .weight-card .lbl{font-size:13px; color:var(--text2); font-weight:600;}
+  .weight-card .val{font-size:20px; font-weight:700; margin-top:2px;}
+  .weight-card .delta{font-size:13px; font-weight:600; margin-top:2px;}
+  .delta.down{color:#1F8A3B;}
+  .delta.up{color:#D9291C;}
+  .record .del{
+    background:none;
+    border:none;
+    color:#C7C7CC;
+    font-size:18px;
+    padding:4px 6px;
+    cursor:pointer;
+    flex-shrink:0;
+  }
+  .record .share-rec{
+    background:none;
+    border:none;
+    color:var(--dad);
+    font-size:17px;
+    padding:4px 4px;
+    cursor:pointer;
+    flex-shrink:0;
+  }
+
+  .empty{
+    text-align:center;
+    padding:40px 20px;
+    color:var(--text2);
+    font-size:14px;
+    font-weight:500;
+  }
+
+  .fab{
+    position:sticky;
+    bottom:16px;
+    width:100%;
+    display:flex;
+    justify-content:center;
+    margin-top:20px;
+  }
+  .fab button{
+    background:var(--dad);
+    color:#fff;
+    border:none;
+    padding:15px 28px;
+    border-radius:26px;
+    font-family:inherit;
+    font-size:16px;
+    font-weight:700;
+    box-shadow:0 6px 16px rgba(0,122,255,0.35);
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+
+  .overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.4);
+    display:none;
+    align-items:flex-end;
+    justify-content:center;
+    z-index:50;
+  }
+  .overlay.show{display:flex;}
+  .sheet{
+    background:var(--card);
+    width:100%;
+    max-width:430px;
+    border-radius:24px 24px 0 0;
+    padding:10px 20px 28px;
+  }
+  .sheet .handle{
+    width:36px;
+    height:5px;
+    background:var(--line);
+    border-radius:3px;
+    margin:6px auto 14px;
+  }
+  .sheet h2{
+    font-size:19px;
+    font-weight:700;
+    margin:0 0 16px;
+    text-align:center;
+  }
+  .field{
+    margin-bottom:14px;
+  }
+  .field label{
+    font-size:13px;
+    font-weight:600;
+    color:var(--text2);
+    display:block;
+    margin-bottom:6px;
+  }
+  .field input, .field select{
+    width:100%;
+    padding:12px 14px;
+    border-radius:12px;
+    border:1px solid var(--line);
+    background:#F9F9FB;
+    font-family:inherit;
+    font-size:16px;
+    color:var(--text);
+  }
+  .field .row2{
+    display:flex;
+    gap:10px;
+  }
+  .field .row2 > div{flex:1;}
+  .person-picker{
+    display:flex;
+    gap:8px;
+  }
+  .person-picker button{
+    flex:1;
+    padding:11px 0;
+    border-radius:12px;
+    border:1.5px solid var(--line);
+    background:#F9F9FB;
+    font-family:inherit;
+    font-size:14px;
+    font-weight:600;
+    color:var(--text2);
+    cursor:pointer;
+  }
+  .person-picker button.sel.dad{border-color:var(--dad); background:var(--dad-bg); color:var(--dad);}
+  .person-picker button.sel.mom{border-color:var(--mom); background:var(--mom-bg); color:var(--mom);}
+  .person-picker button.sel.son{border-color:var(--son); background:var(--son-bg); color:var(--son);}
+  #conv-picker button.sel{border-color:var(--text); background:#EFEFF2; color:var(--text);}
+
+  .save-btn{
+    width:100%;
+    padding:15px 0;
+    border:none;
+    border-radius:14px;
+    background:var(--dad);
+    color:#fff;
+    font-family:inherit;
+    font-size:16px;
+    font-weight:700;
+    margin-top:6px;
+    cursor:pointer;
+  }
+  .cancel-btn{
+    width:100%;
+    padding:13px 0;
+    border:none;
+    background:transparent;
+    color:var(--text2);
+    font-family:inherit;
+    font-size:15px;
+    font-weight:600;
+    margin-top:4px;
+    cursor:pointer;
+  }
+
+  .onboard{
+    position:fixed;
+    inset:0;
+    background:var(--bg);
+    z-index:100;
+    display:flex;
+    flex-direction:column;
+    max-width:430px;
+    margin:0 auto;
+  }
+  .onboard-slides{
+    display:flex;
+    flex:1;
+    width:300%;
+    transition:transform 0.35s ease;
+  }
+  .onboard-slide{
+    width:33.333%;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    padding:32px;
+    text-align:center;
+  }
+  .onboard-icon{
+    width:100px;
+    height:100px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:40px;
+    margin-bottom:28px;
+  }
+  .onboard-slide h3{
+    font-size:23px;
+    font-weight:700;
+    margin:0 0 10px;
+    letter-spacing:-0.3px;
+  }
+  .onboard-slide p{
+    font-size:15px;
+    color:var(--text2);
+    line-height:1.6;
+    margin:0;
+    font-weight:500;
+  }
+  .onboard-bottom{
+    padding:0 28px 40px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:18px;
+  }
+  .onboard-dots{display:flex; gap:6px;}
+  .onboard-dots span{
+    width:6px; height:6px; border-radius:50%; background:var(--line);
+  }
+  .onboard-dots span.on{background:var(--dad);}
+  .onboard-next{
+    width:100%;
+    padding:15px 0;
+    border:none;
+    border-radius:14px;
+    background:var(--dad);
+    color:#fff;
+    font-family:inherit;
+    font-size:16px;
+    font-weight:700;
+    cursor:pointer;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="status-space"></div>
+  <header style="display:flex; justify-content:space-between; align-items:flex-start;">
+    <div>
+      <h1>가족 러닝 프로젝트</h1>
+      <p id="header-sub">아빠 · 엄마 · 아들, 함께 뛰는 기록</p>
+    </div>
+    <button id="share-btn" style="background:#fff; border:none; border-radius:14px; width:44px; height:44px; font-size:18px; box-shadow:0 1px 3px rgba(0,0,0,0.1); margin-top:8px; cursor:pointer;">↗</button>
+  </header>
+
+  <div class="hero">
+    <div class="label" id="hero-label">이번 주 가족 총 거리</div>
+    <div class="big" id="hero-big">0.0<span>km</span></div>
+    <div class="row">
+      <div>총 러닝 횟수<strong id="hero-count">0회</strong></div>
+      <div>평균 페이스<strong id="hero-pace">-</strong></div>
+      <div>최장 거리<strong id="hero-long">-</strong></div>
+    </div>
+  </div>
+
+  <div class="segment" id="segment">
+    <button data-p="all" class="active">전체</button>
+    <button data-p="dad">아빠</button>
+    <button data-p="mom">엄마</button>
+    <button data-p="son">민우</button>
+  </div>
+
+  <div class="stat-grid" id="stat-grid"></div>
+
+  <div id="weight-section"></div>
+
+  <div class="section-title">기록</div>
+  <div id="record-list"></div>
+
+  <div class="fab">
+    <button id="add-btn">＋ 러닝 기록 추가</button>
+  </div>
+</div>
+
+<div class="onboard" id="onboard" style="display:none;">
+  <div class="onboard-slides" id="onboard-slides">
+    <div class="onboard-slide">
+      <div class="onboard-icon" style="background:var(--dad-bg); color:var(--dad);">🏃</div>
+      <h3>나란히</h3>
+      <p>엄마, 아빠, 민우<br>우리 세 식구 함께 뛰는 기록</p>
+    </div>
+    <div class="onboard-slide">
+      <div class="onboard-icon" style="background:var(--son-bg); color:#1F8A3B;">💬</div>
+      <h3>느려도 괜찮아</h3>
+      <p>천천히, 하지만 꾸준히</p>
+    </div>
+    <div class="onboard-slide">
+      <div class="onboard-icon" style="background:#FFF4E5; color:#B26B00;">📤</div>
+      <h3>서로에게 힘이 되어주기</h3>
+      <p>기록을 공유하며<br>서로 응원하기</p>
+    </div>
+  </div>
+  <div class="onboard-bottom">
+    <div class="onboard-dots" id="onboard-dots">
+      <span class="on"></span><span></span><span></span>
+    </div>
+    <button class="onboard-next" id="onboard-next">다음</button>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="sheet">
+    <div class="handle"></div>
+    <h2>러닝 기록 추가</h2>
+    <div class="field">
+      <label>누구의 기록인가요</label>
+      <div class="person-picker" id="picker">
+        <button data-p="dad" class="dad">아빠</button>
+        <button data-p="mom" class="mom">엄마</button>
+        <button data-p="son" class="son">민우</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>날짜</label>
+      <input type="date" id="in-date">
+    </div>
+    <div class="field">
+      <label>거리 (km)</label>
+      <input type="number" id="in-dist" step="0.01" placeholder="예: 3.02">
+    </div>
+    <div class="field">
+      <label>시간</label>
+      <div class="row2">
+        <div>
+          <input type="number" id="in-min" placeholder="분" min="0">
+        </div>
+        <div>
+          <input type="number" id="in-sec" placeholder="초" min="0" max="59">
+        </div>
+      </div>
+    </div>
+    <div class="field" id="weight-field" style="display:none;">
+      <label>체중 (kg, 선택)</label>
+      <input type="number" id="in-weight" step="0.1" placeholder="예: 78.5">
+    </div>
+    <div class="field">
+      <label>사진 (선택)</label>
+      <input type="file" id="in-photo" accept="image/*" capture="environment">
+      <div id="photo-preview" style="margin-top:8px; display:none;">
+        <img id="photo-preview-img" style="width:100%; border-radius:12px; display:block;">
+      </div>
+    </div>
+    <div class="field">
+      <label>뛰는 동안 대화가 가능했나요?</label>
+      <div class="person-picker" id="conv-picker">
+        <button data-c="yes">네, 가능</button>
+        <button data-c="no">힘들었어요</button>
+        <button data-c="none">체크 안함</button>
+      </div>
+    </div>
+    <button class="save-btn" id="save-btn">저장</button>
+    <button class="cancel-btn" id="cancel-btn">취소</button>
+  </div>
+</div>
+
+<script>
+const PEOPLE = {
+  dad: {label:'아빠', color:'dad', birth:1967},
+  mom: {label:'엄마', color:'mom', birth:1969},
+  son: {label:'민우', color:'son', birth:1998}
+};
+
+let records = [];
+let currentFilter = 'all';
+let selectedPerson = 'dad';
+let selectedConv = 'none';
+let selectedPhoto = null;
+// 아들 목표 페이스존: 대화 가능한 저강도 유산소 구간 (초/km)
+const SON_ZONE_MIN = 7*60;
+const SON_ZONE_MAX = 9*60;
+
+function compressImage(file, maxSize){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onload = (e)=>{
+      const img = new Image();
+      img.onload = ()=>{
+        let w = img.width, h = img.height;
+        if(w > h && w > maxSize){ h = Math.round(h * maxSize / w); w = maxSize; }
+        else if(h > maxSize){ w = Math.round(w * maxSize / h); h = maxSize; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.7));
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function fmtPace(secPerKm){
+  if(!isFinite(secPerKm) || secPerKm<=0) return '-';
+  const m = Math.floor(secPerKm/60);
+  const s = Math.round(secPerKm%60);
+  return m + "'" + String(s).padStart(2,'0') + '"';
+}
+function fmtDuration(totalSec){
+  const h = Math.floor(totalSec/3600);
+  const m = Math.floor((totalSec%3600)/60);
+  const s = Math.round(totalSec%60);
+  if(h>0) return h+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  return m+':'+String(s).padStart(2,'0');
+}
+function fmtDate(d){
+  const dt = new Date(d+'T00:00:00');
+  const days = ['일','월','화','수','목','금','토'];
+  return (dt.getMonth()+1)+'월 '+dt.getDate()+'일 ('+days[dt.getDay()]+')';
+}
+
+async function storageGet(key){
+  if(window.storage){
+    try{
+      const res = await window.storage.get(key, false);
+      return res ? res.value : null;
+    }catch(e){ return null; }
+  }
+  return localStorage.getItem(key);
+}
+async function storageSet(key, value){
+  if(window.storage){
+    try{ await window.storage.set(key, value, false); }catch(e){ console.error('저장 실패', e); }
+    return;
+  }
+  try{ localStorage.setItem(key, value); }catch(e){ console.error('저장 실패', e); }
+}
+
+async function loadRecords(){
+  const raw = await storageGet('records');
+  records = raw ? JSON.parse(raw) : null;
+  if(records === null){
+    records = [
+      {id:'seed1', person:'dad', date:'2026-08-01', distance:3.02, duration:1445, weight:null, conv:'none'},
+      {id:'seed2', person:'dad', date:'2026-08-02', distance:3.32, duration:1579, weight:null, conv:'none'}
+    ];
+    await saveRecords();
+  }
+  render();
+}
+async function saveRecords(){
+  await storageSet('records', JSON.stringify(records));
+}
+
+function getFiltered(){
+  if(currentFilter==='all') return records.slice();
+  return records.filter(r=>r.person===currentFilter);
+}
+
+function render(){
+  const filtered = getFiltered().sort((a,b)=> b.date.localeCompare(a.date));
+
+  // hero: 최근 7일(오늘 포함) 롤링 기준으로 계산 - 요일에 관계없이 최근 활동을 바로 반영
+  const now = new Date();
+  const weekStart = new Date(now);
+  weekStart.setDate(now.getDate() - 6);
+  weekStart.setHours(0,0,0,0);
+  const weekRecords = filtered.filter(r=> new Date(r.date+'T00:00:00') >= weekStart);
+  const weekDist = weekRecords.reduce((s,r)=>s+r.distance,0);
+  const weekDur = weekRecords.reduce((s,r)=>s+r.duration,0);
+  const weekPace = weekDist>0 ? weekDur/weekDist : 0;
+  const longRun = filtered.reduce((m,r)=> r.distance>m ? r.distance : m, 0);
+
+  document.getElementById('hero-label').textContent =
+    (currentFilter==='all' ? '최근 7일 가족 총 거리' : '최근 7일 '+PEOPLE[currentFilter].label+' 거리');
+  document.getElementById('hero-big').innerHTML = weekDist.toFixed(1)+'<span>km</span>';
+  document.getElementById('hero-count').textContent = weekRecords.length+'회';
+  document.getElementById('hero-pace').textContent = fmtPace(weekPace)+(weekPace>0?'/km':'');
+  document.getElementById('hero-long').textContent = longRun>0 ? longRun.toFixed(2)+'km' : '-';
+
+  // stat grid: totals all-time for filter
+  const totalDist = filtered.reduce((s,r)=>s+r.distance,0);
+  const totalDur = filtered.reduce((s,r)=>s+r.duration,0);
+  const avgPace = totalDist>0 ? totalDur/totalDist : 0;
+  const grid = document.getElementById('stat-grid');
+  grid.innerHTML = `
+    <div class="stat-card"><div class="n">${totalDist.toFixed(1)}km</div><div class="l">누적 거리</div></div>
+    <div class="stat-card"><div class="n">${filtered.length}회</div><div class="l">누적 횟수</div></div>
+    <div class="stat-card"><div class="n">${fmtPace(avgPace)}</div><div class="l">평균 페이스</div></div>
+  `;
+
+  const weightSection = document.getElementById('weight-section');
+  if(currentFilter==='son'){
+    const weighed = records.filter(r=>r.person==='son' && r.weight).sort((a,b)=>a.date.localeCompare(b.date));
+    if(weighed.length>0){
+      const first = weighed[0].weight;
+      const last = weighed[weighed.length-1].weight;
+      const diff = last - first;
+      const diffStr = (diff>=0?'+':'')+diff.toFixed(1)+'kg';
+      weightSection.innerHTML = `
+        <div class="weight-card">
+          <div>
+            <div class="lbl">최근 체중</div>
+            <div class="val">${last.toFixed(1)}kg</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="lbl">기록 시작 대비</div>
+            <div class="delta ${diff<=0?'down':'up'}">${diffStr}</div>
+          </div>
+        </div>`;
+    } else {
+      weightSection.innerHTML = '';
+    }
+  } else {
+    weightSection.innerHTML = '';
+  }
+
+  const list = document.getElementById('record-list');
+  if(filtered.length===0){
+    list.innerHTML = '<div class="empty">아직 기록이 없어요.<br>첫 러닝을 기록해보세요.</div>';
+    return;
+  }
+  list.innerHTML = filtered.map(r=>{
+    const p = PEOPLE[r.person];
+    const pace = r.duration/r.distance;
+    let zoneTag = '';
+    if(r.person==='son'){
+      if(pace < SON_ZONE_MIN){
+        zoneTag = '<span class="zone-tag zone-fast">너무 빨랐어요</span>';
+      } else {
+        zoneTag = '<span class="zone-tag zone-good">목표존</span>';
+      }
+    }
+    let convTag = '';
+    if(r.conv==='yes') convTag = '<span class="conv-tag">🗣️ 대화 가능</span>';
+    else if(r.conv==='no') convTag = '<span class="conv-tag">😮‍💨 힘들었음</span>';
+    return `
+    <div class="record">
+      <div class="badge ${p.color}">${p.label[0]}</div>
+      ${r.photo ? `<img class="photo-thumb" src="${r.photo}">` : ''}
+      <div class="info">
+        <div class="top">
+          <span class="dist">${r.distance.toFixed(2)}km</span>
+          <span class="date">${fmtDate(r.date)}</span>
+        </div>
+        <div class="bottom">
+          <span>${fmtDuration(r.duration)}</span>
+          <span>${fmtPace(pace)}/km</span>
+          ${currentFilter==='all' ? '<span>'+p.label+'</span>' : ''}
+          ${zoneTag}
+          ${convTag}
+          ${r.weight ? '<span>'+r.weight.toFixed(1)+'kg</span>' : ''}
+        </div>
+      </div>
+      <button class="share-rec" data-share="${r.id}">↗</button>
+      <button class="del" data-id="${r.id}">✕</button>
+    </div>`;
+  }).join('');
+
+  list.querySelectorAll('[data-share]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const rec = records.find(r=>r.id === btn.dataset.share);
+      if(rec) shareRecord(rec);
+    });
+  });
+
+  list.querySelectorAll('.del').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      records = records.filter(r=>r.id !== btn.dataset.id);
+      await saveRecords();
+      render();
+    });
+  });
+}
+
+document.getElementById('segment').addEventListener('click', (e)=>{
+  const btn = e.target.closest('button');
+  if(!btn) return;
+  currentFilter = btn.dataset.p;
+  document.querySelectorAll('#segment button').forEach(b=>b.classList.toggle('active', b===btn));
+  render();
+});
+
+const overlay = document.getElementById('overlay');
+document.getElementById('add-btn').addEventListener('click', ()=>{
+  document.getElementById('in-date').value = new Date().toISOString().slice(0,10);
+  document.getElementById('in-dist').value = '';
+  document.getElementById('in-min').value = '';
+  document.getElementById('in-sec').value = '';
+  document.getElementById('in-weight').value = '';
+  document.getElementById('in-photo').value = '';
+  document.getElementById('photo-preview').style.display = 'none';
+  selectedPhoto = null;
+  selectedPerson = currentFilter==='all' ? 'dad' : currentFilter;
+  selectedConv = 'none';
+  updatePicker();
+  updateConvPicker();
+  toggleWeightField();
+  overlay.classList.add('show');
+});
+document.getElementById('in-photo').addEventListener('change', async (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  try{
+    selectedPhoto = await compressImage(file, 1000);
+    document.getElementById('photo-preview-img').src = selectedPhoto;
+    document.getElementById('photo-preview').style.display = 'block';
+  }catch(err){
+    alert('사진을 불러오지 못했어요.');
+  }
+});
+function toggleWeightField(){
+  document.getElementById('weight-field').style.display = (selectedPerson==='son') ? 'block' : 'none';
+}
+function updateConvPicker(){
+  document.querySelectorAll('#conv-picker button').forEach(b=>{
+    b.classList.toggle('sel', b.dataset.c===selectedConv);
+  });
+}
+document.getElementById('conv-picker').addEventListener('click', (e)=>{
+  const btn = e.target.closest('button');
+  if(!btn) return;
+  selectedConv = btn.dataset.c;
+  updateConvPicker();
+});
+document.getElementById('cancel-btn').addEventListener('click', ()=>{
+  overlay.classList.remove('show');
+});
+overlay.addEventListener('click', (e)=>{
+  if(e.target===overlay) overlay.classList.remove('show');
+});
+
+function updatePicker(){
+  document.querySelectorAll('#picker button').forEach(b=>{
+    b.classList.toggle('sel', b.dataset.p===selectedPerson);
+  });
+}
+document.getElementById('picker').addEventListener('click', (e)=>{
+  const btn = e.target.closest('button');
+  if(!btn) return;
+  selectedPerson = btn.dataset.p;
+  updatePicker();
+  toggleWeightField();
+});
+
+document.getElementById('save-btn').addEventListener('click', async ()=>{
+  const date = document.getElementById('in-date').value;
+  const dist = parseFloat(document.getElementById('in-dist').value);
+  const min = parseInt(document.getElementById('in-min').value)||0;
+  const sec = parseInt(document.getElementById('in-sec').value)||0;
+  if(!date || !dist || dist<=0 || (min===0 && sec===0)){
+    alert('날짜, 거리, 시간을 모두 입력해주세요.');
+    return;
+  }
+  const weightVal = parseFloat(document.getElementById('in-weight').value);
+  records.push({
+    id: 'r'+Date.now(),
+    person: selectedPerson,
+    date: date,
+    distance: dist,
+    duration: min*60+sec,
+    weight: (selectedPerson==='son' && weightVal>0) ? weightVal : null,
+    conv: selectedConv,
+    photo: selectedPhoto
+  });
+  await saveRecords();
+  overlay.classList.remove('show');
+  render();
+});
+
+function shareText(title, text){
+  if(navigator.share){
+    navigator.share({title, text}).catch(()=>{});
+  } else if(navigator.clipboard){
+    navigator.clipboard.writeText(text).then(()=>{
+      alert('클립보드에 복사했어요. 카카오톡 채팅방에 붙여넣기 해주세요.');
+    }).catch(()=>{
+      alert(text);
+    });
+  } else {
+    alert(text);
+  }
+}
+
+function dataUrlToFile(dataUrl, filename){
+  const arr = dataUrl.split(',');
+  const mime = arr[0].match(/:(.*?);/)[1];
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while(n--){ u8arr[n] = bstr.charCodeAt(n); }
+  return new File([u8arr], filename, {type: mime});
+}
+
+async function shareRecord(r){
+  const p = PEOPLE[r.person];
+  const pace = r.duration/r.distance;
+  const text = `[가족 러닝 기록]\n${fmtDate(r.date)} · ${p.label}\n${r.distance.toFixed(2)}km · ${fmtDuration(r.duration)} · ${fmtPace(pace)}/km`;
+
+  if(r.photo && navigator.canShare){
+    try{
+      const file = dataUrlToFile(r.photo, 'running.jpg');
+      if(navigator.canShare({files:[file]})){
+        await navigator.share({title:'가족 러닝 기록', text, files:[file]});
+        return;
+      }
+    }catch(e){}
+  }
+  shareText('가족 러닝 기록', text);
+}
+
+document.getElementById('share-btn').addEventListener('click', ()=>{
+  const filtered = getFiltered();
+  const totalDist = filtered.reduce((s,r)=>s+r.distance,0);
+  const totalCount = filtered.length;
+  const who = currentFilter==='all' ? '가족 전체' : PEOPLE[currentFilter].label;
+  const text = `[가족 러닝 프로젝트]\n${who} 누적 ${totalDist.toFixed(1)}km · ${totalCount}회\n오늘도 함께 뛰었어요!`;
+  shareText('가족 러닝 프로젝트', text);
+});
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+
+async function initOnboarding(){
+  const done = await storageGet('onboarding_done');
+  if(done) return;
+  const onboard = document.getElementById('onboard');
+  const slides = document.getElementById('onboard-slides');
+  const dots = document.querySelectorAll('#onboard-dots span');
+  const next = document.getElementById('onboard-next');
+  onboard.style.display = 'flex';
+  let idx = 0;
+  function update(){
+    slides.style.transform = 'translateX(-' + (idx*33.333) + '%)';
+    dots.forEach((d,i)=> d.classList.toggle('on', i===idx));
+    next.textContent = idx===2 ? '시작하기' : '다음';
+  }
+  next.addEventListener('click', async ()=>{
+    if(idx<2){ idx++; update(); }
+    else{
+      onboard.style.display = 'none';
+      await storageSet('onboarding_done', '1');
+    }
+  });
+}
+
+initOnboarding();
+loadRecords();
+</script>
+</body>
+</html>
