@@ -3,14 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>가족 러닝 프로젝트</title>
+<title>Run Together</title>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#007AFF">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="가족러닝">
+<meta name="apple-mobile-web-app-title" content="Run Together">
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   :root{
     --bg:#F2F2F7;
@@ -25,6 +26,8 @@
     --son:#34C759;
     --son-bg:#E9F9EC;
     --radius:18px;
+    --accent:#007AFF;
+    --accent-light:#5AC8FA;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   html,body{margin:0;padding:0;}
@@ -34,18 +37,18 @@
     color:var(--text);
     display:flex;
     justify-content:center;
-    padding-bottom:40px;
+    padding-bottom:0;
   }
   #app{
     width:100%;
     max-width:430px;
     min-height:100vh;
     background:var(--bg);
-    padding:0 16px;
+    padding:0 16px calc(88px + env(safe-area-inset-bottom, 0px));
   }
-  .status-space{height:20px;}
+  .status-space{height:calc(28px + env(safe-area-inset-top, 0px));}
   header{
-    padding:8px 4px 18px;
+    padding:12px 4px 20px;
   }
   header h1{
     font-size:28px;
@@ -61,13 +64,26 @@
   }
 
   .hero{
-    background:linear-gradient(135deg,#0A84FF,#5AC8FA);
+    background:linear-gradient(135deg,var(--accent),var(--accent-light));
     border-radius:24px;
     padding:22px 22px 20px;
     color:#fff;
     margin-bottom:16px;
     position:relative;
     overflow:hidden;
+  }
+  .hero-share-btn{
+    position:absolute;
+    top:18px;
+    right:18px;
+    background:rgba(255,255,255,0.22);
+    border:none;
+    border-radius:12px;
+    width:36px;
+    height:36px;
+    font-size:16px;
+    color:#fff;
+    cursor:pointer;
   }
   .hero .label{
     font-size:13px;
@@ -284,7 +300,7 @@
   .record .share-rec{
     background:none;
     border:none;
-    color:var(--dad);
+    color:var(--accent);
     font-size:17px;
     padding:4px 4px;
     cursor:pointer;
@@ -308,7 +324,7 @@
     margin-top:20px;
   }
   .fab button{
-    background:var(--dad);
+    background:var(--accent);
     color:#fff;
     border:none;
     padding:15px 28px;
@@ -404,7 +420,7 @@
     padding:15px 0;
     border:none;
     border-radius:14px;
-    background:var(--dad);
+    background:var(--accent);
     color:#fff;
     font-family:inherit;
     font-size:16px;
@@ -484,65 +500,290 @@
   .onboard-dots span{
     width:6px; height:6px; border-radius:50%; background:var(--line);
   }
-  .onboard-dots span.on{background:var(--dad);}
+  .onboard-dots span.on{background:var(--accent);}
   .onboard-next{
     width:100%;
     padding:15px 0;
     border:none;
     border-radius:14px;
-    background:var(--dad);
+    background:var(--accent);
     color:#fff;
     font-family:inherit;
     font-size:16px;
     font-weight:700;
     cursor:pointer;
   }
+
+  .page{display:none;}
+  .page.active{display:block;}
+
+  .tabbar{
+    position:fixed;
+    bottom:0;
+    left:50%;
+    transform:translateX(-50%);
+    width:100%;
+    max-width:430px;
+    background:rgba(255,255,255,0.92);
+    backdrop-filter:blur(20px);
+    -webkit-backdrop-filter:blur(20px);
+    border-top:0.5px solid var(--line);
+    display:flex;
+    padding:6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
+    z-index:40;
+  }
+  .tabbar button{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:2px;
+    background:none;
+    border:none;
+    padding:6px 0 4px;
+    font-family:inherit;
+    color:var(--text2);
+    cursor:pointer;
+  }
+  .tabbar button .ic{font-size:20px; line-height:1;}
+  .tabbar button .tl{font-size:11px; font-weight:600;}
+  .tabbar button.active{color:var(--accent);}
+
+  .settings-section{
+    margin-bottom:24px;
+  }
+  .settings-section .stitle{
+    font-size:13px;
+    font-weight:700;
+    color:var(--text2);
+    margin:0 0 8px 4px;
+    text-transform:uppercase;
+    letter-spacing:0.3px;
+  }
+  .settings-card{
+    background:var(--card);
+    border-radius:16px;
+    overflow:hidden;
+  }
+  .settings-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:14px 16px;
+    cursor:pointer;
+  }
+  .settings-row + .settings-row{
+    border-top:0.5px solid var(--line);
+  }
+  .settings-row .avatar{
+    width:44px;
+    height:44px;
+    border-radius:50%;
+    object-fit:cover;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:16px;
+    font-weight:700;
+    flex-shrink:0;
+  }
+  .settings-row .rtitle{
+    font-size:15px;
+    font-weight:600;
+    flex:1;
+  }
+  .settings-row .rsub{
+    font-size:13px;
+    color:var(--text2);
+  }
+  .settings-row .chev{color:var(--line); font-size:16px;}
+  .theme-swatches{
+    display:flex;
+    gap:12px;
+    padding:16px;
+    background:var(--card);
+    border-radius:16px;
+  }
+  .theme-swatch{
+    width:34px;
+    height:34px;
+    border-radius:50%;
+    border:3px solid transparent;
+    cursor:pointer;
+    flex-shrink:0;
+  }
+  .theme-swatch.sel{border-color:var(--text);}
+  .settings-btn-row{
+    padding:14px 16px;
+    font-size:15px;
+    font-weight:600;
+    color:var(--accent);
+    cursor:pointer;
+    background:none;
+    border:none;
+    width:100%;
+    text-align:left;
+    font-family:inherit;
+  }
+  .settings-btn-row + .settings-btn-row{border-top:0.5px solid var(--line);}
+  .settings-btn-row.danger{color:#D9291C;}
+  #import-file-input{display:none;}
+  .google-row{
+    padding:16px;
+    background:var(--card);
+    border-radius:16px;
+  }
+  .google-row input{
+    width:100%;
+    padding:11px 12px;
+    border-radius:10px;
+    border:1px solid var(--line);
+    background:#F9F9FB;
+    font-family:inherit;
+    font-size:13px;
+    margin-bottom:10px;
+    box-sizing:border-box;
+  }
+  .stat-mini-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:10px;
+    margin-bottom:20px;
+  }
+  .person-stat-card{
+    background:var(--card);
+    border-radius:16px;
+    padding:16px 12px;
+    text-align:center;
+  }
+  .person-stat-card .pavatar{
+    width:36px; height:36px; border-radius:50%;
+    margin:0 auto 8px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:14px; font-weight:700;
+    object-fit:cover;
+  }
+  .person-stat-card .pname{font-size:13px; font-weight:700; margin-bottom:6px;}
+  .person-stat-card .pdist{font-size:17px; font-weight:700;}
+  .person-stat-card .pmeta{font-size:11px; color:var(--text2); margin-top:2px;}
+  .week-bars{
+    display:flex;
+    align-items:flex-end;
+    gap:8px;
+    height:120px;
+    padding:16px;
+    background:var(--card);
+    border-radius:16px;
+    margin-bottom:16px;
+  }
+  .week-bar-col{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:flex-end;
+    height:100%;
+    gap:6px;
+  }
+  .week-bar-col .bar{
+    width:100%;
+    max-width:28px;
+    background:var(--accent);
+    border-radius:6px 6px 3px 3px;
+    min-height:3px;
+  }
+  .week-bar-col .wl{font-size:10px; color:var(--text2); font-weight:600;}
 </style>
 </head>
 <body>
 <div id="app">
   <div class="status-space"></div>
-  <header style="display:flex; justify-content:space-between; align-items:flex-start;">
-    <div>
-      <h1>가족 러닝 프로젝트</h1>
+
+  <div class="page active" id="page-home">
+    <header>
+      <h1>Run Together</h1>
       <p id="header-sub">아빠 · 엄마 · 민우, 함께 뛰는 기록</p>
+    </header>
+
+    <div class="hero">
+      <button class="hero-share-btn" id="share-btn">↗</button>
+      <div class="label" id="hero-label">이번 주 가족 총 거리</div>
+      <div class="big" id="hero-big">0.0<span>km</span></div>
+      <div class="row">
+        <div>총 러닝 횟수<strong id="hero-count">0회</strong></div>
+        <div>평균 페이스<strong id="hero-pace">-</strong></div>
+        <div>최장 거리<strong id="hero-long">-</strong></div>
+      </div>
     </div>
-    <button id="share-btn" style="background:#fff; border:none; border-radius:14px; width:44px; height:44px; font-size:18px; box-shadow:0 1px 3px rgba(0,0,0,0.1); margin-top:8px; cursor:pointer;">↗</button>
-  </header>
 
-  <div class="hero">
-    <div class="label" id="hero-label">이번 주 가족 총 거리</div>
-    <div class="big" id="hero-big">0.0<span>km</span></div>
-    <div class="row">
-      <div>총 러닝 횟수<strong id="hero-count">0회</strong></div>
-      <div>평균 페이스<strong id="hero-pace">-</strong></div>
-      <div>최장 거리<strong id="hero-long">-</strong></div>
+    <div class="segment" id="segment">
+      <button data-p="all" class="active">전체</button>
+      <button data-p="dad">아빠</button>
+      <button data-p="mom">엄마</button>
+      <button data-p="son">민우</button>
+    </div>
+
+    <div class="month-nav">
+      <button id="month-prev">‹</button>
+      <span id="month-label">2026년 8월</span>
+      <button id="month-next">›</button>
+    </div>
+
+    <div class="stat-grid" id="stat-grid"></div>
+
+    <div id="weight-section"></div>
+
+    <div class="section-title">기록</div>
+    <div id="record-list"></div>
+
+    <div class="fab">
+      <button id="add-btn">＋ 러닝 기록 추가</button>
     </div>
   </div>
 
-  <div class="segment" id="segment">
-    <button data-p="all" class="active">전체</button>
-    <button data-p="dad">아빠</button>
-    <button data-p="mom">엄마</button>
-    <button data-p="son">민우</button>
+  <div class="page" id="page-stats">
+    <header><h1>통계</h1><p>가족 전체 러닝 데이터</p></header>
+    <div id="stats-body"></div>
   </div>
 
-  <div class="month-nav">
-    <button id="month-prev">‹</button>
-    <span id="month-label">2026년 8월</span>
-    <button id="month-next">›</button>
+  <div class="page" id="page-settings">
+    <header><h1>설정</h1><p>프로필과 앱 환경 설정</p></header>
+
+    <div class="settings-section">
+      <div class="stitle">프로필</div>
+      <div class="settings-card" id="profile-rows"></div>
+    </div>
+
+    <div class="settings-section">
+      <div class="stitle">테마 색상</div>
+      <div class="theme-swatches" id="theme-swatches"></div>
+    </div>
+
+    <div class="settings-section">
+      <div class="stitle">계정</div>
+      <div class="google-row">
+        <input type="text" id="google-client-id" placeholder="Google OAuth 클라이언트 ID 붙여넣기">
+        <div id="google-signin-btn"></div>
+        <div id="google-status" style="font-size:13px; color:var(--text2); margin-top:8px;"></div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="stitle">데이터</div>
+      <div class="settings-card">
+        <button class="settings-btn-row" id="export-btn">데이터 내보내기</button>
+        <button class="settings-btn-row" id="import-btn">데이터 가져오기</button>
+        <input type="file" id="import-file-input" accept="application/json">
+        <button class="settings-btn-row" id="app-share-btn">앱 공유하기</button>
+      </div>
+    </div>
   </div>
+</div>
 
-  <div class="stat-grid" id="stat-grid"></div>
-
-  <div id="weight-section"></div>
-
-  <div class="section-title">기록</div>
-  <div id="record-list"></div>
-
-  <div class="fab">
-    <button id="add-btn">＋ 러닝 기록 추가</button>
-  </div>
+<div class="tabbar">
+  <button class="tab active" data-page="home"><span class="ic">🏠</span><span class="tl">홈</span></button>
+  <button class="tab" data-page="stats"><span class="ic">📊</span><span class="tl">통계</span></button>
+  <button class="tab" data-page="settings"><span class="ic">⚙️</span><span class="tl">설정</span></button>
 </div>
 
 <div class="onboard" id="onboard" style="display:none;">
@@ -641,9 +882,25 @@ let selectedConv = 'none';
 let selectedPhoto = null;
 let editingId = null;
 let currentMonth = (()=>{ const d = new Date(); d.setDate(1); d.setHours(0,0,0,0); return d; })();
+let profiles = { dad:{name:null,photo:null}, mom:{name:null,photo:null}, son:{name:null,photo:null} };
+let editingProfileId = null;
+let profilePhotoDraft = null;
+const THEMES = {
+  blue:   {accent:'#007AFF', light:'#5AC8FA'},
+  purple: {accent:'#AF52DE', light:'#DA8FFF'},
+  pink:   {accent:'#FF2D55', light:'#FF7A9C'},
+  green:  {accent:'#34C759', light:'#8BE0A6'},
+  orange: {accent:'#FF9500', light:'#FFC266'}
+};
+let currentTheme = 'blue';
 // 아들 목표 페이스존: 대화 가능한 저강도 유산소 구간 (초/km)
 const SON_ZONE_MIN = 7*60;
 const SON_ZONE_MAX = 9*60;
+
+function getProfile(id){
+  const p = profiles[id] || {};
+  return { name: p.name || PEOPLE[id].label, photo: p.photo || null };
+}
 
 function compressImage(file, maxSize){
   return new Promise((resolve, reject)=>{
@@ -736,6 +993,7 @@ function isCurrentOrFutureMonth(){
 }
 
 function render(){
+  updateLabels();
   const filtered = getFiltered().sort((a,b)=> b.date.localeCompare(a.date));
 
   // hero: 최근 7일(오늘 포함) 롤링 기준으로 계산 - 요일에 관계없이 최근 활동을 바로 반영
@@ -750,7 +1008,7 @@ function render(){
   const longRun = filtered.reduce((m,r)=> r.distance>m ? r.distance : m, 0);
 
   document.getElementById('hero-label').textContent =
-    (currentFilter==='all' ? '최근 7일 가족 총 거리' : '최근 7일 '+PEOPLE[currentFilter].label+' 거리');
+    (currentFilter==='all' ? '최근 7일 가족 총 거리' : '최근 7일 '+getProfile(currentFilter).name+' 거리');
   document.getElementById('hero-big').innerHTML = weekDist.toFixed(1)+'<span>km</span>';
   document.getElementById('hero-count').textContent = weekRecords.length+'회';
   document.getElementById('hero-pace').textContent = fmtPace(weekPace)+(weekPace>0?'/km':'');
@@ -804,6 +1062,7 @@ function render(){
   } else {
   list.innerHTML = monthRecords.sort((a,b)=> b.date.localeCompare(a.date)).map(r=>{
     const p = PEOPLE[r.person];
+    const prof = getProfile(r.person);
     const pace = r.duration/r.distance;
     let zoneTag = '';
     if(r.person==='son'){
@@ -816,9 +1075,12 @@ function render(){
     let convTag = '';
     if(r.conv==='yes') convTag = '<span class="conv-tag">🗣️ 대화 가능</span>';
     else if(r.conv==='no') convTag = '<span class="conv-tag">😮‍💨 힘들었음</span>';
+    const badgeHtml = prof.photo
+      ? `<img class="badge" style="object-fit:cover;" src="${prof.photo}">`
+      : `<div class="badge ${p.color}">${prof.name[0]}</div>`;
     return `
     <div class="record" data-open="${r.id}">
-      <div class="badge ${p.color}">${p.label[0]}</div>
+      ${badgeHtml}
       ${r.photo ? `<img class="photo-thumb" src="${r.photo}">` : ''}
       <div class="info">
         <div class="top">
@@ -828,7 +1090,7 @@ function render(){
         <div class="bottom">
           <span>${fmtDuration(r.duration)}</span>
           <span>${fmtPace(pace)}/km</span>
-          ${currentFilter==='all' ? '<span>'+p.label+'</span>' : ''}
+          ${currentFilter==='all' ? '<span>'+prof.name+'</span>' : ''}
           ${zoneTag}
           ${convTag}
           ${r.weight ? '<span>'+r.weight.toFixed(1)+'kg</span>' : ''}
@@ -1012,29 +1274,29 @@ function dataUrlToFile(dataUrl, filename){
 }
 
 async function shareRecord(r){
-  const p = PEOPLE[r.person];
+  const prof = getProfile(r.person);
   const pace = r.duration/r.distance;
-  const text = `[가족 러닝 기록]\n${fmtDate(r.date)} · ${p.label}\n${r.distance.toFixed(2)}km · ${fmtDuration(r.duration)} · ${fmtPace(pace)}/km`;
+  const text = `[Run Together]\n${fmtDate(r.date)} · ${prof.name}\n${r.distance.toFixed(2)}km · ${fmtDuration(r.duration)} · ${fmtPace(pace)}/km`;
 
   if(r.photo && navigator.canShare){
     try{
       const file = dataUrlToFile(r.photo, 'running.jpg');
       if(navigator.canShare({files:[file]})){
-        await navigator.share({title:'가족 러닝 기록', text, files:[file]});
+        await navigator.share({title:'Run Together', text, files:[file]});
         return;
       }
     }catch(e){}
   }
-  shareText('가족 러닝 기록', text);
+  shareText('Run Together', text);
 }
 
 document.getElementById('share-btn').addEventListener('click', ()=>{
   const filtered = getFiltered();
   const totalDist = filtered.reduce((s,r)=>s+r.distance,0);
   const totalCount = filtered.length;
-  const who = currentFilter==='all' ? '가족 전체' : PEOPLE[currentFilter].label;
-  const text = `[가족 러닝 프로젝트]\n${who} 누적 ${totalDist.toFixed(1)}km · ${totalCount}회\n오늘도 함께 뛰었어요!`;
-  shareText('가족 러닝 프로젝트', text);
+  const who = currentFilter==='all' ? '가족 전체' : getProfile(currentFilter).name;
+  const text = `[Run Together]\n${who} 누적 ${totalDist.toFixed(1)}km · ${totalCount}회\n오늘도 함께 뛰었어요!`;
+  shareText('Run Together', text);
 });
 
 if('serviceWorker' in navigator){
@@ -1066,6 +1328,262 @@ async function initOnboarding(){
   });
 }
 
+function updateLabels(){
+  document.querySelector('#segment [data-p="dad"]').textContent = getProfile('dad').name;
+  document.querySelector('#segment [data-p="mom"]').textContent = getProfile('mom').name;
+  document.querySelector('#segment [data-p="son"]').textContent = getProfile('son').name;
+  document.querySelector('#picker [data-p="dad"]').textContent = getProfile('dad').name;
+  document.querySelector('#picker [data-p="mom"]').textContent = getProfile('mom').name;
+  document.querySelector('#picker [data-p="son"]').textContent = getProfile('son').name;
+  document.getElementById('header-sub').textContent =
+    `${getProfile('dad').name} · ${getProfile('mom').name} · ${getProfile('son').name}, 함께 뛰는 기록`;
+}
+
+async function loadProfiles(){
+  const raw = await storageGet('profiles');
+  if(raw){
+    try{ profiles = {...profiles, ...JSON.parse(raw)}; }catch(e){}
+  }
+}
+async function saveProfiles(){
+  await storageSet('profiles', JSON.stringify(profiles));
+}
+
+function applyTheme(key){
+  const t = THEMES[key] || THEMES.blue;
+  document.documentElement.style.setProperty('--accent', t.accent);
+  document.documentElement.style.setProperty('--accent-light', t.light);
+  document.querySelector('meta[name="theme-color"]').setAttribute('content', t.accent);
+  currentTheme = key;
+  document.querySelectorAll('.theme-swatch').forEach(sw=>{
+    sw.classList.toggle('sel', sw.dataset.theme===key);
+  });
+}
+async function loadTheme(){
+  const saved = await storageGet('theme');
+  if(saved && THEMES[saved]) applyTheme(saved);
+  else applyTheme('blue');
+}
+
+// ---- 탭 전환 ----
+document.querySelectorAll('.tabbar .tab').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const page = btn.dataset.page;
+    document.querySelectorAll('.tabbar .tab').forEach(b=>b.classList.toggle('active', b===btn));
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.getElementById('page-'+page).classList.add('active');
+    if(page==='stats') renderStats();
+    if(page==='settings') renderSettings();
+  });
+});
+
+// ---- 통계 탭 ----
+function renderStats(){
+  const body = document.getElementById('stats-body');
+  const perPerson = ['dad','mom','son'].map(id=>{
+    const recs = records.filter(r=>r.person===id);
+    const dist = recs.reduce((s,r)=>s+r.distance,0);
+    const prof = getProfile(id);
+    const avatarHtml = prof.photo
+      ? `<img class="pavatar" src="${prof.photo}">`
+      : `<div class="pavatar badge ${PEOPLE[id].color}">${prof.name[0]}</div>`;
+    return `<div class="person-stat-card">${avatarHtml}<div class="pname">${prof.name}</div><div class="pdist">${dist.toFixed(1)}km</div><div class="pmeta">${recs.length}회</div></div>`;
+  }).join('');
+
+  // 최근 8주 가족 전체 거리 막대 그래프
+  const weeks = [];
+  const today = new Date();
+  for(let i=7;i>=0;i--){
+    const end = new Date(today); end.setDate(today.getDate() - i*7);
+    const start = new Date(end); start.setDate(end.getDate()-6);
+    const dist = records.filter(r=>{
+      const d = new Date(r.date+'T00:00:00');
+      return d>=start && d<=end;
+    }).reduce((s,r)=>s+r.distance,0);
+    weeks.push({label:(start.getMonth()+1)+'/'+start.getDate(), dist});
+  }
+  const maxDist = Math.max(...weeks.map(w=>w.dist), 1);
+  const barsHtml = weeks.map(w=>{
+    const h = Math.max(3, Math.round((w.dist/maxDist)*88));
+    return `<div class="week-bar-col"><div class="bar" style="height:${h}px;" title="${w.dist.toFixed(1)}km"></div><div class="wl">${w.label}</div></div>`;
+  }).join('');
+
+  const totalDist = records.reduce((s,r)=>s+r.distance,0);
+  const totalCount = records.length;
+
+  body.innerHTML = `
+    <div class="stat-mini-grid">${perPerson}</div>
+    <div class="section-title">최근 8주 추이</div>
+    <div class="week-bars">${barsHtml}</div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="n">${totalDist.toFixed(1)}km</div><div class="l">전체 누적 거리</div></div>
+      <div class="stat-card"><div class="n">${totalCount}회</div><div class="l">전체 누적 횟수</div></div>
+      <div class="stat-card"><div class="n">${records.length ? (records.reduce((s,r)=>s+r.duration,0)/totalDist/60).toFixed(0)+"'" : '-'}</div><div class="l">전체 평균 페이스</div></div>
+    </div>
+  `;
+}
+
+// ---- 설정 탭: 프로필 ----
+function renderSettings(){
+  const rows = document.getElementById('profile-rows');
+  rows.innerHTML = ['dad','mom','son'].map(id=>{
+    const prof = getProfile(id);
+    const avatarHtml = prof.photo
+      ? `<img class="avatar" src="${prof.photo}">`
+      : `<div class="avatar badge ${PEOPLE[id].color}">${prof.name[0]}</div>`;
+    return `<div class="settings-row" data-edit-profile="${id}">${avatarHtml}<div class="rtitle">${prof.name}</div><span class="chev">›</span></div>`;
+  }).join('');
+  rows.querySelectorAll('[data-edit-profile]').forEach(row=>{
+    row.addEventListener('click', ()=> openProfileSheet(row.dataset.editProfile));
+  });
+
+  const swatches = document.getElementById('theme-swatches');
+  if(!swatches.dataset.built){
+    swatches.innerHTML = Object.keys(THEMES).map(key=>
+      `<button class="theme-swatch" data-theme="${key}" style="background:${THEMES[key].accent};"></button>`
+    ).join('');
+    swatches.querySelectorAll('.theme-swatch').forEach(sw=>{
+      sw.addEventListener('click', async ()=>{
+        applyTheme(sw.dataset.theme);
+        await storageSet('theme', sw.dataset.theme);
+      });
+    });
+    swatches.dataset.built = '1';
+  }
+  document.querySelectorAll('.theme-swatch').forEach(sw=>{
+    sw.classList.toggle('sel', sw.dataset.theme===currentTheme);
+  });
+}
+
+function openProfileSheet(id){
+  editingProfileId = id;
+  const prof = getProfile(id);
+  profilePhotoDraft = prof.photo;
+  const nameVal = prompt(`${PEOPLE[id].label}의 표시 이름을 입력하세요`, prof.name);
+  if(nameVal === null) return;
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.accept = 'image/*';
+  fileInput.onchange = async (e)=>{
+    const file = e.target.files[0];
+    let photo = prof.photo;
+    if(file){
+      try{ photo = await compressImage(file, 400); }catch(err){}
+    }
+    profiles[id] = { name: nameVal.trim() || null, photo };
+    await saveProfiles();
+    render();
+    renderSettings();
+  };
+  if(confirm('프로필 사진도 바꾸시겠어요? (취소하면 이름만 저장)')){
+    fileInput.click();
+  } else {
+    profiles[id] = { name: nameVal.trim() || null, photo: prof.photo };
+    saveProfiles().then(()=>{ render(); renderSettings(); });
+  }
+}
+
+// ---- 데이터 내보내기/가져오기 ----
+document.getElementById('export-btn').addEventListener('click', ()=>{
+  const payload = { records, profiles, theme: currentTheme, exportedAt: new Date().toISOString() };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'run-together-data.json';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById('import-btn').addEventListener('click', ()=>{
+  document.getElementById('import-file-input').click();
+});
+document.getElementById('import-file-input').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = async (ev)=>{
+    try{
+      const data = JSON.parse(ev.target.result);
+      if(!confirm('가져온 데이터로 지금 기록을 덮어쓸까요? (취소 시 아무 변화 없음)')) return;
+      if(Array.isArray(data.records)) records = data.records;
+      if(data.profiles) profiles = {...profiles, ...data.profiles};
+      await saveRecords();
+      await saveProfiles();
+      if(data.theme && THEMES[data.theme]){ applyTheme(data.theme); await storageSet('theme', data.theme); }
+      render();
+      alert('데이터를 가져왔어요.');
+    }catch(err){
+      alert('올바른 백업 파일이 아니에요.');
+    }
+  };
+  reader.readAsText(file);
+});
+
+document.getElementById('app-share-btn').addEventListener('click', ()=>{
+  shareText('Run Together', `Run Together 앱을 같이 써봐요!\n${location.href}`);
+});
+
+// ---- 구글 로그인 (클라이언트 ID를 직접 발급받아 붙여넣어야 동작) ----
+(function initGoogleLogin(){
+  const input = document.getElementById('google-client-id');
+  const statusEl = document.getElementById('google-status');
+  storageGet('google_client_id').then(saved=>{
+    if(saved) input.value = saved;
+  });
+  storageGet('google_profile').then(raw=>{
+    if(raw){
+      try{
+        const prof = JSON.parse(raw);
+        statusEl.textContent = `${prof.name} (${prof.email}) 계정으로 로그인됨`;
+      }catch(e){}
+    } else {
+      statusEl.textContent = '클라이언트 ID를 입력하면 구글 로그인 버튼이 나타나요.';
+    }
+  });
+
+  input.addEventListener('change', async ()=>{
+    const id = input.value.trim();
+    await storageSet('google_client_id', id);
+    renderGoogleButton(id);
+  });
+
+  function renderGoogleButton(clientId){
+    const btnEl = document.getElementById('google-signin-btn');
+    btnEl.innerHTML = '';
+    if(!clientId) return;
+    if(!window.google || !window.google.accounts){
+      statusEl.textContent = '구글 로그인 스크립트를 불러오는 중...';
+      setTimeout(()=>renderGoogleButton(clientId), 500);
+      return;
+    }
+    try{
+      window.google.accounts.id.initialize({
+        client_id: clientId,
+        callback: async (resp)=>{
+          try{
+            const payload = JSON.parse(atob(resp.credential.split('.')[1]));
+            const prof = { name: payload.name, email: payload.email, picture: payload.picture };
+            await storageSet('google_profile', JSON.stringify(prof));
+            statusEl.textContent = `${prof.name} (${prof.email}) 계정으로 로그인됨`;
+          }catch(e){
+            statusEl.textContent = '로그인 처리 중 오류가 발생했어요.';
+          }
+        }
+      });
+      window.google.accounts.id.renderButton(btnEl, {theme:'outline', size:'large', width:260});
+    }catch(e){
+      statusEl.textContent = '클라이언트 ID가 올바르지 않을 수 있어요.';
+    }
+  }
+
+  storageGet('google_client_id').then(saved=>{
+    if(saved) renderGoogleButton(saved);
+  });
+})();
+
+loadTheme();
+loadProfiles().then(render);
 initOnboarding();
 loadRecords();
 </script>
