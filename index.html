@@ -762,9 +762,9 @@
     <div class="settings-section">
       <div class="stitle">계정</div>
       <div class="google-row">
-        <input type="text" id="google-client-id" placeholder="Google OAuth 클라이언트 ID 붙여넣기">
         <div id="google-signin-btn"></div>
         <div id="google-status" style="font-size:13px; color:var(--text2); margin-top:8px;"></div>
+        <div id="google-logout" style="font-size:13px; color:#D9291C; margin-top:8px; cursor:pointer; display:none;">로그아웃</div>
       </div>
     </div>
 
@@ -1524,48 +1524,64 @@ document.getElementById('app-share-btn').addEventListener('click', ()=>{
   shareText('Run Together', `Run Together 앱을 같이 써봐요!\n${location.href}`);
 });
 
-// ---- 구글 로그인 (클라이언트 ID를 직접 발급받아 붙여넣어야 동작) ----
+// ---- 구글 로그인 ----
+const GOOGLE_CLIENT_ID = '368952825871-b13n0f8707r34v26l7495710f0e3mhnk.apps.googleusercontent.com';
+
+function decodeJwtPayload(token){
+  const base64Url = token.split('.')[1];
+  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+  const binary = atob(base64);
+  // UTF-8 바이트를 정확히 디코딩 (한글 이름이 깨지지 않도록)
+  const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+  const json = new TextDecoder('utf-8').decode(bytes);
+  return JSON.parse(json);
+}
+
 (function initGoogleLogin(){
-  const input = document.getElementById('google-client-id');
   const statusEl = document.getElementById('google-status');
-  storageGet('google_client_id').then(saved=>{
-    if(saved) input.value = saved;
-  });
+  const logoutEl = document.getElementById('google-logout');
+
+  function showLoggedIn(prof){
+    statusEl.textContent = `${prof.name} (${prof.email}) 계정으로 로그인됨`;
+    logoutEl.style.display = 'block';
+    document.getElementById('google-signin-btn').style.display = 'none';
+  }
+  function showLoggedOut(){
+    statusEl.textContent = '구글 계정으로 로그인해보세요.';
+    logoutEl.style.display = 'none';
+    document.getElementById('google-signin-btn').style.display = 'block';
+  }
+
   storageGet('google_profile').then(raw=>{
     if(raw){
-      try{
-        const prof = JSON.parse(raw);
-        statusEl.textContent = `${prof.name} (${prof.email}) 계정으로 로그인됨`;
-      }catch(e){}
+      try{ showLoggedIn(JSON.parse(raw)); }
+      catch(e){ showLoggedOut(); }
     } else {
-      statusEl.textContent = '클라이언트 ID를 입력하면 구글 로그인 버튼이 나타나요.';
+      showLoggedOut();
     }
   });
 
-  input.addEventListener('change', async ()=>{
-    const id = input.value.trim();
-    await storageSet('google_client_id', id);
-    renderGoogleButton(id);
+  logoutEl.addEventListener('click', async ()=>{
+    await storageSet('google_profile', '');
+    if(window.google && window.google.accounts) window.google.accounts.id.disableAutoSelect();
+    showLoggedOut();
   });
 
-  function renderGoogleButton(clientId){
+  function renderGoogleButton(){
     const btnEl = document.getElementById('google-signin-btn');
-    btnEl.innerHTML = '';
-    if(!clientId) return;
     if(!window.google || !window.google.accounts){
-      statusEl.textContent = '구글 로그인 스크립트를 불러오는 중...';
-      setTimeout(()=>renderGoogleButton(clientId), 500);
+      setTimeout(renderGoogleButton, 300);
       return;
     }
     try{
       window.google.accounts.id.initialize({
-        client_id: clientId,
+        client_id: GOOGLE_CLIENT_ID,
         callback: async (resp)=>{
           try{
-            const payload = JSON.parse(atob(resp.credential.split('.')[1]));
+            const payload = decodeJwtPayload(resp.credential);
             const prof = { name: payload.name, email: payload.email, picture: payload.picture };
             await storageSet('google_profile', JSON.stringify(prof));
-            statusEl.textContent = `${prof.name} (${prof.email}) 계정으로 로그인됨`;
+            showLoggedIn(prof);
           }catch(e){
             statusEl.textContent = '로그인 처리 중 오류가 발생했어요.';
           }
@@ -1573,13 +1589,10 @@ document.getElementById('app-share-btn').addEventListener('click', ()=>{
       });
       window.google.accounts.id.renderButton(btnEl, {theme:'outline', size:'large', width:260});
     }catch(e){
-      statusEl.textContent = '클라이언트 ID가 올바르지 않을 수 있어요.';
+      statusEl.textContent = '로그인 버튼을 불러오지 못했어요.';
     }
   }
-
-  storageGet('google_client_id').then(saved=>{
-    if(saved) renderGoogleButton(saved);
-  });
+  renderGoogleButton();
 })();
 
 loadTheme();
