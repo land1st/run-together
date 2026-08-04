@@ -765,6 +765,10 @@
         <div id="google-signin-btn"></div>
         <div id="google-status" style="font-size:13px; color:var(--text2); margin-top:8px;"></div>
         <div id="google-logout" style="font-size:13px; color:#D9291C; margin-top:8px; cursor:pointer; display:none;">로그아웃</div>
+        <div id="drive-sync-block" style="margin-top:14px; display:none;">
+          <div id="drive-status" style="font-size:13px; color:var(--text2); margin-bottom:8px;">드라이브와 동기화되지 않음</div>
+          <button id="drive-sync-btn" style="width:100%; padding:11px 0; border:none; border-radius:10px; background:var(--accent); color:#fff; font-family:inherit; font-size:14px; font-weight:700; cursor:pointer;">지금 동기화</button>
+        </div>
       </div>
     </div>
 
@@ -974,6 +978,7 @@ async function loadRecords(){
 }
 async function saveRecords(){
   await storageSet('records', JSON.stringify(records));
+  if(typeof pushToDrive === 'function') pushToDrive().catch(()=>{});
 }
 
 function getFiltered(){
@@ -1347,6 +1352,7 @@ async function loadProfiles(){
 }
 async function saveProfiles(){
   await storageSet('profiles', JSON.stringify(profiles));
+  if(typeof pushToDrive === 'function') pushToDrive().catch(()=>{});
 }
 
 function applyTheme(key){
@@ -1524,6 +1530,137 @@ document.getElementById('app-share-btn').addEventListener('click', ()=>{
   shareText('Run Together', `Run Together 앱을 같이 써봐요!\n${location.href}`);
 });
 
+// ---- 구글 드라이브 동기화 (앱 데이터 폴더에 기록 저장) ----
+const DRIVE_FILE_NAME = 'run-together-data.json';
+const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.appdata';
+let driveAccessToken = null;
+let driveFileId = null;
+let tokenClient = null;
+
+function ensureTokenClient(){
+  if(!tokenClient && window.google && google.accounts && google.accounts.oauth2){
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: GOOGLE_CLIENT_ID,
+      scope: DRIVE_SCOPE,
+      callback: ()=>{}
+    });
+  }
+  return tokenClient;
+}
+
+function requestDriveToken(interactive){
+  return new Promise((resolve)=>{
+    const tc = ensureTokenClient();
+    if(!tc){ resolve(null); return; }
+    tc.callback = (resp)=>{
+      if(resp && resp.access_token){ driveAccessToken = resp.access_token; resolve(resp.access_token); }
+      else resolve(null);
+    };
+    try{ tc.requestAccessToken({prompt: interactive ? 'consent' : ''}); }
+    catch(e){ resolve(null); }
+  });
+}
+
+async function driveFindFileId(){
+  const q = encodeURIComponent(`name='${DRIVE_FILE_NAME}'`);
+  const res = await fetch(`https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&fields=files(id,modifiedTime)&q=${q}`, {
+    headers:{Authorization:'Bearer '+driveAccessToken}
+  });
+  if(!res.ok) return null;
+  const data = await res.json();
+  return (data.files && data.files[0]) ? data.files[0].id : null;
+}
+
+async function driveDownloadData(fileId){
+  const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+    headers:{Authorization:'Bearer '+driveAccessToken}
+  });
+  if(!res.ok) return null;
+  try{ return await res.json(); }catch(e){ return null; }
+}
+
+async function driveUploadData(fileId, payload){
+  const metadata = fileId ? {} : {name: DRIVE_FILE_NAME, parents:['appDataFolder']};
+  const boundary = 'runtogether' + Date.now();
+  const body =
+    `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n` +
+    `--${boundary}\r\nContent-Type: application/json\r\n\r\n${JSON.stringify(payload)}\r\n` +
+    `--${boundary}--`;
+  const url = fileId
+    ? `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=multipart`
+    : `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart`;
+  const res = await fetch(url, {
+    method: fileId ? 'PATCH' : 'POST',
+    headers:{ Authorization:'Bearer '+driveAccessToken, 'Content-Type': `multipart/related; boundary=${boundary}` },
+    body
+  });
+  if(!res.ok) return null;
+  const data = await res.json();
+  return data.id;
+}
+
+function setDriveStatus(text){
+  const el = document.getElementById('drive-status');
+  if(el) el.textContent = text;
+}
+
+async function pushToDrive(){
+  if(!driveAccessToken) return;
+  const updatedAt = new Date().toISOString();
+  const payload = { records, profiles, theme: currentTheme, updatedAt };
+  try{
+    if(!driveFileId) driveFileId = await driveFindFileId();
+    const id = await driveUploadData(driveFileId, payload);
+    if(id){
+      driveFileId = id;
+      await storageSet('last_updated', updatedAt);
+      setDriveStatus('마지막 동기화: 방금 전');
+    }
+  }catch(e){}
+}
+
+async function pullFromDrive(showAlert){
+  driveFileId = await driveFindFileId();
+  if(!driveFileId){
+    if(showAlert){ setDriveStatus('드라이브에 저장된 기록이 없어 지금 데이터를 올렸어요.'); }
+    await pushToDrive();
+    return;
+  }
+  const data = await driveDownloadData(driveFileId);
+  if(data){
+    const localUpdated = await storageGet('last_updated');
+    if(!localUpdated || !data.updatedAt || data.updatedAt > localUpdated){
+      records = data.records || [];
+      profiles = {...profiles, ...(data.profiles||{})};
+      await storageSet('records', JSON.stringify(records));
+      await storageSet('profiles', JSON.stringify(profiles));
+      await storageSet('last_updated', data.updatedAt || new Date().toISOString());
+      render();
+      if(document.getElementById('page-settings').classList.contains('active')) renderSettings();
+      setDriveStatus('마지막 동기화: 방금 전 (최신 기록 반영됨)');
+    } else {
+      setDriveStatus('마지막 동기화: 방금 전 (이미 최신 상태)');
+    }
+  }
+}
+
+async function connectDrive(interactive){
+  const tok = await requestDriveToken(interactive);
+  if(!tok){
+    if(interactive) setDriveStatus('드라이브 접근 권한을 허용해주세요.');
+    return false;
+  }
+  document.getElementById('drive-sync-block').style.display = 'block';
+  await pullFromDrive(interactive);
+  return true;
+}
+
+document.getElementById('drive-sync-btn').addEventListener('click', async ()=>{
+  setDriveStatus('동기화 중...');
+  const ok = await connectDrive(true);
+  if(ok) await pushToDrive();
+});
+
 // ---- 구글 로그인 ----
 const GOOGLE_CLIENT_ID = '368952825871-b13n0f8707r34v26l7495710f0e3mhnk.apps.googleusercontent.com';
 
@@ -1550,11 +1687,15 @@ function decodeJwtPayload(token){
     statusEl.textContent = '구글 계정으로 로그인해보세요.';
     logoutEl.style.display = 'none';
     document.getElementById('google-signin-btn').style.display = 'block';
+    document.getElementById('drive-sync-block').style.display = 'none';
   }
 
   storageGet('google_profile').then(raw=>{
     if(raw){
-      try{ showLoggedIn(JSON.parse(raw)); }
+      try{
+        showLoggedIn(JSON.parse(raw));
+        connectDrive(false); // 같은 브라우저에서 이미 허용했다면 조용히 다시 연결 시도
+      }
       catch(e){ showLoggedOut(); }
     } else {
       showLoggedOut();
@@ -1564,6 +1705,7 @@ function decodeJwtPayload(token){
   logoutEl.addEventListener('click', async ()=>{
     await storageSet('google_profile', '');
     if(window.google && window.google.accounts) window.google.accounts.id.disableAutoSelect();
+    driveAccessToken = null;
     showLoggedOut();
   });
 
@@ -1582,6 +1724,7 @@ function decodeJwtPayload(token){
             const prof = { name: payload.name, email: payload.email, picture: payload.picture };
             await storageSet('google_profile', JSON.stringify(prof));
             showLoggedIn(prof);
+            await connectDrive(true); // 처음 로그인 시 드라이브 접근 동의를 바로 요청
           }catch(e){
             statusEl.textContent = '로그인 처리 중 오류가 발생했어요.';
           }
