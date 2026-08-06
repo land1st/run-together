@@ -817,6 +817,26 @@
   </div>
 </div>
 
+<div class="overlay" id="profile-overlay">
+  <div class="sheet">
+    <div class="handle"></div>
+    <h2>프로필 수정</h2>
+    <div class="field" style="text-align:center;">
+      <div id="profile-photo-preview" style="width:88px; height:88px; border-radius:50%; margin:0 auto 12px; background:var(--dad-bg); display:flex; align-items:center; justify-content:center; overflow:hidden; font-size:28px; font-weight:700; color:var(--dad);"></div>
+      <label style="display:inline-block; font-size:14px; font-weight:600; color:var(--accent); cursor:pointer;">
+        사진 바꾸기
+        <input type="file" id="profile-photo-input" accept="image/*" style="display:none;">
+      </label>
+    </div>
+    <div class="field">
+      <label>표시 이름</label>
+      <input type="text" id="profile-name-input" placeholder="이름 입력">
+    </div>
+    <button class="save-btn" id="profile-save-btn">저장</button>
+    <button class="cancel-btn" id="profile-cancel-btn">취소</button>
+  </div>
+</div>
+
 <div class="overlay" id="overlay">
   <div class="sheet">
     <div class="handle"></div>
@@ -1480,29 +1500,48 @@ function openProfileSheet(id){
   editingProfileId = id;
   const prof = getProfile(id);
   profilePhotoDraft = prof.photo;
-  const nameVal = prompt(`${PEOPLE[id].label}의 표시 이름을 입력하세요`, prof.name);
-  if(nameVal === null) return;
-  const fileInput = document.createElement('input');
-  fileInput.type = 'file';
-  fileInput.accept = 'image/*';
-  fileInput.onchange = async (e)=>{
-    const file = e.target.files[0];
-    let photo = prof.photo;
-    if(file){
-      try{ photo = await compressImage(file, 400); }catch(err){}
-    }
-    profiles[id] = { name: nameVal.trim() || null, photo };
-    await saveProfiles();
-    render();
-    renderSettings();
-  };
-  if(confirm('프로필 사진도 바꾸시겠어요? (취소하면 이름만 저장)')){
-    fileInput.click();
+  document.getElementById('profile-name-input').value = prof.name;
+  renderProfilePhotoPreview(id, prof.photo);
+  document.getElementById('profile-overlay').classList.add('show');
+}
+
+function renderProfilePhotoPreview(id, photo){
+  const el = document.getElementById('profile-photo-preview');
+  if(photo){
+    el.innerHTML = `<img src="${photo}" style="width:100%; height:100%; object-fit:cover;">`;
   } else {
-    profiles[id] = { name: nameVal.trim() || null, photo: prof.photo };
-    saveProfiles().then(()=>{ render(); renderSettings(); });
+    const nameVal = document.getElementById('profile-name-input').value || PEOPLE[id].label;
+    el.innerHTML = nameVal[0];
   }
 }
+
+document.getElementById('profile-photo-input').addEventListener('change', async (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  try{
+    profilePhotoDraft = await compressImage(file, 400);
+    renderProfilePhotoPreview(editingProfileId, profilePhotoDraft);
+  }catch(err){
+    alert('사진을 불러오지 못했어요.');
+  }
+});
+document.getElementById('profile-name-input').addEventListener('input', ()=>{
+  if(!profilePhotoDraft) renderProfilePhotoPreview(editingProfileId, null);
+});
+document.getElementById('profile-cancel-btn').addEventListener('click', ()=>{
+  document.getElementById('profile-overlay').classList.remove('show');
+});
+document.getElementById('profile-overlay').addEventListener('click', (e)=>{
+  if(e.target.id === 'profile-overlay') document.getElementById('profile-overlay').classList.remove('show');
+});
+document.getElementById('profile-save-btn').addEventListener('click', async ()=>{
+  const nameVal = document.getElementById('profile-name-input').value.trim();
+  profiles[editingProfileId] = { name: nameVal || null, photo: profilePhotoDraft };
+  await saveProfiles();
+  document.getElementById('profile-overlay').classList.remove('show');
+  render();
+  renderSettings();
+});
 
 // ---- 데이터 내보내기/가져오기 ----
 document.getElementById('export-btn').addEventListener('click', ()=>{
