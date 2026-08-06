@@ -706,6 +706,7 @@
     </header>
 
     <div class="hero">
+      <button class="hero-share-btn" id="hero-sync-btn" style="right:62px;">🔄</button>
       <button class="hero-share-btn" id="share-btn">↗</button>
       <div class="label" id="hero-label">이번 주 가족 총 거리</div>
       <div class="big" id="hero-big">0.0<span>km</span></div>
@@ -1294,6 +1295,20 @@ async function shareRecord(r){
   }
   shareText('Run Together', text);
 }
+
+document.getElementById('hero-sync-btn').addEventListener('click', async ()=>{
+  const btn = document.getElementById('hero-sync-btn');
+  const original = btn.textContent;
+  btn.textContent = '⏳';
+  try{
+    const ok = await connectDrive(true);
+    if(ok){ await pushToDrive(); btn.textContent = '✅'; }
+    else { btn.textContent = '⚠️'; }
+  }catch(e){
+    btn.textContent = '⚠️';
+  }
+  setTimeout(()=>{ btn.textContent = original; }, 1500);
+});
 
 document.getElementById('share-btn').addEventListener('click', ()=>{
   const filtered = getFiltered();
