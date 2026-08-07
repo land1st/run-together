@@ -249,6 +249,13 @@
   .badge.orange{background:var(--orange-bg); color:var(--orange);}
 
   .comment-count-tag{font-size:12px; color:var(--text2);}
+  .record-note{
+    font-size:13px;
+    color:var(--text2);
+    margin-top:5px;
+    line-height:1.4;
+    word-break:break-word;
+  }
 
   .record .info{flex:1; min-width:0;}
   .record .info .top{
@@ -406,6 +413,11 @@
     gap:10px;
   }
   .field .row2 > div{flex:1;}
+  .field .row3{
+    display:flex;
+    gap:8px;
+  }
+  .field .row3 > div{flex:1;}
   .person-picker{
     display:flex;
     flex-wrap:wrap;
@@ -428,6 +440,7 @@
   .person-picker button.sel.son{border-color:var(--son); background:var(--son-bg); color:var(--son);}
   .person-picker button.sel.violet{border-color:var(--violet); background:var(--violet-bg); color:var(--violet);}
   .person-picker button.sel.orange{border-color:var(--orange); background:var(--orange-bg); color:var(--orange);}
+  #conv-picker button{flex:1 1 46%;}
   #conv-picker button.sel{border-color:var(--text); background:#EFEFF2; color:var(--text);}
 
   .check-row{
@@ -956,9 +969,12 @@
     </div>
     <div class="field">
       <label>시간</label>
-      <div class="row2">
+      <div class="row3">
         <div>
-          <input type="number" id="in-min" placeholder="분" min="0">
+          <input type="number" id="in-hour" placeholder="시간" min="0">
+        </div>
+        <div>
+          <input type="number" id="in-min" placeholder="분" min="0" max="59">
         </div>
         <div>
           <input type="number" id="in-sec" placeholder="초" min="0" max="59">
@@ -977,12 +993,17 @@
       </div>
     </div>
     <div class="field">
-      <label>뛰는 동안 대화가 가능했나요?</label>
+      <label>운동 강도는 어땠나요?</label>
       <div class="person-picker" id="conv-picker">
-        <button data-c="yes">네, 가능</button>
-        <button data-c="no">힘들었어요</button>
-        <button data-c="none">체크 안함</button>
+        <button data-c="easy">쉬움</button>
+        <button data-c="normal">보통</button>
+        <button data-c="hard">어려움</button>
+        <button data-c="max">전력투구</button>
       </div>
+    </div>
+    <div class="field">
+      <label>한마디 메모 (선택)</label>
+      <input type="text" id="in-note" placeholder="예: 오늘 컨디션 최고!" maxlength="80">
     </div>
     <div class="field" id="comments-section" style="display:none;">
       <label>댓글</label>
@@ -1012,7 +1033,7 @@ const COLOR_PALETTE = ['dad','mom','son','violet','orange'];
 let records = [];
 let currentFilter = 'all';
 let selectedPerson = 'dad';
-let selectedConv = 'none';
+let selectedConv = 'normal';
 let selectedPhoto = null;
 let selectedPhotoIsNew = false;
 let selectedPhotoDriveId = null;
@@ -1317,6 +1338,13 @@ function fmtWeekRange(startDate){
   return (startDate.getMonth()+1)+'.'+startDate.getDate()+' ~ '+(end.getMonth()+1)+'.'+end.getDate();
 }
 
+const CONV_LEVELS = {
+  easy:   {label:'쉬움', emoji:'🟢'},
+  normal: {label:'보통', emoji:'🟡'},
+  hard:   {label:'어려움', emoji:'🟠'},
+  max:    {label:'전력투구', emoji:'🔴'}
+};
+
 function renderRecordCard(r){
   const meta = getPerson(r.person);
   const prof = getProfile(r.person);
@@ -1328,8 +1356,10 @@ function renderRecordCard(r){
       : '<span class="zone-tag zone-good">목표존</span>';
   }
   let convTag = '';
-  if(r.conv==='yes') convTag = '<span class="conv-tag">🗣️ 대화 가능</span>';
-  else if(r.conv==='no') convTag = '<span class="conv-tag">😮‍💨 힘들었음</span>';
+  if(CONV_LEVELS[r.conv]){
+    const lv = CONV_LEVELS[r.conv];
+    convTag = `<span class="conv-tag">${lv.emoji} ${lv.label}</span>`;
+  }
   const commentCount = (r.comments && r.comments.length) || 0;
   const commentTag = commentCount>0 ? `<span class="comment-count-tag">💬 ${commentCount}</span>` : '';
   const badgeHtml = prof.photo
@@ -1356,6 +1386,7 @@ function renderRecordCard(r){
           ${commentTag}
           ${r.weight ? '<span>'+r.weight.toFixed(1)+'kg</span>' : ''}
         </div>
+        ${r.note ? '<div class="record-note">📝 '+escapeHtml(r.note)+'</div>' : ''}
       </div>
       <button class="share-rec" data-share="${r.id}">↗</button>
     </div>`;
@@ -1387,9 +1418,11 @@ function openSheet(record){
   document.getElementById('delete-btn').style.display = record ? 'block' : 'none';
   document.getElementById('in-date').value = record ? record.date : new Date().toISOString().slice(0,10);
   document.getElementById('in-dist').value = record ? record.distance : '';
-  document.getElementById('in-min').value = record ? Math.floor(record.duration/60) : '';
+  document.getElementById('in-hour').value = record ? Math.floor(record.duration/3600) : '';
+  document.getElementById('in-min').value = record ? Math.floor((record.duration%3600)/60) : '';
   document.getElementById('in-sec').value = record ? record.duration%60 : '';
   document.getElementById('in-weight').value = record && record.weight ? record.weight : '';
+  document.getElementById('in-note').value = record && record.note ? record.note : '';
   document.getElementById('in-photo').value = '';
   selectedPhoto = record ? (record.photo || null) : null;
   selectedPhotoDriveId = record ? (record.photoDriveId || null) : null;
@@ -1407,7 +1440,7 @@ function openSheet(record){
     document.getElementById('photo-preview').style.display = 'none';
   }
   selectedPerson = record ? record.person : (currentFilter==='all' ? (PEOPLE_LIST[0]?PEOPLE_LIST[0].id:'dad') : currentFilter);
-  selectedConv = record ? record.conv : 'none';
+  selectedConv = record ? record.conv : 'normal';
   updatePicker();
   updateConvPicker();
   toggleWeightField();
@@ -1517,20 +1550,23 @@ document.getElementById('picker').addEventListener('click', (e)=>{
 document.getElementById('save-btn').addEventListener('click', async ()=>{
   const date = document.getElementById('in-date').value;
   const dist = parseFloat(document.getElementById('in-dist').value);
+  const hour = parseInt(document.getElementById('in-hour').value)||0;
   const min = parseInt(document.getElementById('in-min').value)||0;
   const sec = parseInt(document.getElementById('in-sec').value)||0;
-  if(!date || !dist || dist<=0 || (min===0 && sec===0)){
+  if(!date || !dist || dist<=0 || (hour===0 && min===0 && sec===0)){
     alert('날짜, 거리, 시간을 모두 입력해주세요.');
     return;
   }
   const weightVal = parseFloat(document.getElementById('in-weight').value);
+  const noteVal = document.getElementById('in-note').value.trim();
   const data = {
     person: selectedPerson,
     date: date,
     distance: dist,
-    duration: min*60+sec,
+    duration: hour*3600+min*60+sec,
     weight: (getPerson(selectedPerson).weightTracking && weightVal>0) ? weightVal : null,
     conv: selectedConv,
+    note: noteVal || null,
     photo: null,
     photoDriveId: null
   };
