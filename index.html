@@ -1022,11 +1022,12 @@
 
 <script>
 // 최대 5명까지 등록 가능한 동적 구성원 목록. dad/mom/son은 기존 데이터 호환을 위한 기본 id.
-let PEOPLE_LIST = [
+const DEFAULT_PEOPLE = [
   {id:'dad', label:'고길동', color:'dad', birth:1967, weightTracking:false, zone:null},
   {id:'mom', label:'둘리', color:'mom', birth:1969, weightTracking:false, zone:null},
   {id:'son', label:'희동이', color:'son', birth:1998, weightTracking:true, zone:{min:7,max:9}}
 ];
+let PEOPLE_LIST = JSON.parse(JSON.stringify(DEFAULT_PEOPLE));
 const MAX_PEOPLE = 5;
 const COLOR_PALETTE = ['dad','mom','son','violet','orange'];
 
@@ -1157,6 +1158,29 @@ async function loadPeople(){
 async function savePeople(){
   await storageSet('people_meta', JSON.stringify(PEOPLE_LIST));
   if(typeof pushToDrive === 'function') pushToDrive().catch(()=>{});
+}
+
+// 로그아웃 시 이 기기의 로컬 데이터를 초기화한다.
+// 이렇게 해야 다음 로그인(같은 계정이든 다른 계정이든) 시 로컬 데이터가 아니라
+// 그 계정의 드라이브에 저장된 데이터가 우선적으로 반영된다.
+async function resetLocalState(){
+  records = [];
+  profiles = { dad:{name:null,photo:null}, mom:{name:null,photo:null}, son:{name:null,photo:null} };
+  PEOPLE_LIST = JSON.parse(JSON.stringify(DEFAULT_PEOPLE));
+  currentTheme = 'blue';
+  currentFilter = 'all';
+  driveFileId = null;
+  await storageSet('records', JSON.stringify(records));
+  await storageSet('profiles', JSON.stringify(profiles));
+  await storageSet('people_meta', JSON.stringify(PEOPLE_LIST));
+  await storageSet('theme', currentTheme);
+  await storageSet('last_updated', '');
+  applyTheme(currentTheme);
+  buildSegmentTabs();
+  buildPersonPicker();
+  buildCommentPicker();
+  render();
+  if(document.getElementById('page-settings').classList.contains('active')) renderSettings();
 }
 
 // ---- 세그먼트 탭 / 인물 선택 피커를 구성원 목록 기준으로 동적 렌더링 ----
@@ -2229,9 +2253,12 @@ function decodeJwtPayload(token){
   });
 
   logoutEl.addEventListener('click', async ()=>{
+    try{ await pushToDrive(); }catch(e){} // 로그아웃 직전 마지막 백업
     await storageSet('google_profile', '');
     if(window.google && window.google.accounts) window.google.accounts.id.disableAutoSelect();
     driveAccessToken = null;
+    driveTokenExpiry = 0;
+    await resetLocalState();
     showLoggedOut();
   });
 
