@@ -1625,6 +1625,7 @@ async function driveUploadPhoto(file){
       headers:{ Authorization:'Bearer '+driveAccessToken, 'Content-Type': `multipart/related; boundary=${boundary}` },
       body
     });
+    if(res.status===401){ driveAccessToken = null; return null; }
     if(!res.ok) return null;
     const data = await res.json();
     return data.id || null;
@@ -1676,7 +1677,8 @@ document.getElementById('hero-sync-btn').addEventListener('click', async ()=>{
   const original = btn.textContent;
   btn.textContent = '⏳';
   try{
-    const ok = await connectDrive(true);
+    let ok = await connectDrive(false); // 이미 로그인된 상태면 조용히 갱신만
+    if(!ok) ok = await connectDrive(true); // 처음이거나 완전히 끊긴 경우에만 로그인/동의 창
     if(ok){ await pushToDrive(); btn.textContent = '✅'; }
     else { btn.textContent = '⚠️'; }
   }catch(e){
@@ -2010,6 +2012,7 @@ document.getElementById('app-share-btn').addEventListener('click', ()=>{
 const DRIVE_FILE_NAME = 'run-together-data.json';
 const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.appdata';
 let driveAccessToken = null;
+let driveTokenExpiry = 0; // 토큰 만료 시각(ms epoch)
 let driveFileId = null;
 let tokenClient = null;
 
@@ -2029,7 +2032,11 @@ function requestDriveToken(interactive){
     const tc = ensureTokenClient();
     if(!tc){ resolve(null); return; }
     tc.callback = (resp)=>{
-      if(resp && resp.access_token){ driveAccessToken = resp.access_token; resolve(resp.access_token); }
+      if(resp && resp.access_token){
+        driveAccessToken = resp.access_token;
+        driveTokenExpiry = Date.now() + ((resp.expires_in || 3600) * 1000);
+        resolve(resp.access_token);
+      }
       else resolve(null);
     };
     try{ tc.requestAccessToken({prompt: interactive ? 'consent' : ''}); }
@@ -2037,11 +2044,25 @@ function requestDriveToken(interactive){
   });
 }
 
+// 유효한 토큰이 있으면 그대로 쓰고, 없거나 만료됐으면 먼저 조용히(팝업 없이) 재발급을 시도한다.
+// allowInteractive가 true일 때만, 그래도 안 되면 로그인/동의 창을 띄운다.
+async function ensureDriveAccessToken(allowInteractive){
+  if(driveAccessToken && Date.now() < driveTokenExpiry - 60000){
+    return driveAccessToken;
+  }
+  let tok = await requestDriveToken(false);
+  if(!tok && allowInteractive){
+    tok = await requestDriveToken(true);
+  }
+  return tok;
+}
+
 async function driveFindFileId(){
   const q = encodeURIComponent(`name='${DRIVE_FILE_NAME}'`);
   const res = await fetch(`https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&fields=files(id,modifiedTime)&q=${q}`, {
     headers:{Authorization:'Bearer '+driveAccessToken}
   });
+  if(res.status===401){ driveAccessToken = null; return null; }
   if(!res.ok) return null;
   const data = await res.json();
   return (data.files && data.files[0]) ? data.files[0].id : null;
@@ -2051,6 +2072,7 @@ async function driveDownloadData(fileId){
   const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
     headers:{Authorization:'Bearer '+driveAccessToken}
   });
+  if(res.status===401){ driveAccessToken = null; return null; }
   if(!res.ok) return null;
   try{ return await res.json(); }catch(e){ return null; }
 }
@@ -2070,6 +2092,7 @@ async function driveUploadData(fileId, payload){
     headers:{ Authorization:'Bearer '+driveAccessToken, 'Content-Type': `multipart/related; boundary=${boundary}` },
     body
   });
+  if(res.status===401){ driveAccessToken = null; return null; }
   if(!res.ok) return null;
   const data = await res.json();
   return data.id;
@@ -2081,7 +2104,8 @@ function setDriveStatus(text){
 }
 
 async function pushToDrive(){
-  if(!driveAccessToken) return;
+  const token = await ensureDriveAccessToken(false);
+  if(!token) return;
   const updatedAt = new Date().toISOString();
   const payload = { records, profiles, people: PEOPLE_LIST, theme: currentTheme, updatedAt };
   try{
@@ -2126,7 +2150,7 @@ async function pullFromDrive(showAlert){
 }
 
 async function connectDrive(interactive){
-  const tok = await requestDriveToken(interactive);
+  const tok = await ensureDriveAccessToken(interactive);
   if(!tok){
     if(interactive) setDriveStatus('드라이브 접근 권한을 허용해주세요.');
     return false;
@@ -2138,7 +2162,8 @@ async function connectDrive(interactive){
 
 document.getElementById('drive-sync-btn').addEventListener('click', async ()=>{
   setDriveStatus('동기화 중...');
-  const ok = await connectDrive(true);
+  let ok = await connectDrive(false);
+  if(!ok) ok = await connectDrive(true);
   if(ok) await pushToDrive();
 });
 
