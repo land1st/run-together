@@ -1,4 +1,4 @@
-const CACHE_NAME = 'family-running-v15';
+const CACHE_NAME = 'family-running-v17';
 const ASSETS = [
   './index.html',
   './family_running_tracker.html',
